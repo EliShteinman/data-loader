@@ -1,0 +1,319 @@
+﻿kind: DeploymentConfig
+apiVersion: apps.openshift.io/v1
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftNewApp
+    template.alpha.openshift.io/wait-for-ready: 'true'
+  resourceVersion: '2518355663'
+  name: mysql
+  uid: 4dc5632c-91b2-4d9a-a078-7b50169559b2
+  creationTimestamp: '2025-08-14T12:40:56Z'
+  generation: 2
+  managedFields:
+    - manager: oc
+      operation: Update
+      apiVersion: apps.openshift.io/v1
+      time: '2025-08-14T12:40:56Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:openshift.io/generated-by': {}
+            'f:template.alpha.openshift.io/wait-for-ready': {}
+          'f:labels':
+            .: {}
+            'f:app': {}
+            'f:app.kubernetes.io/component': {}
+            'f:app.kubernetes.io/instance': {}
+            'f:app.openshift.io/runtime': {}
+            'f:template': {}
+        'f:spec':
+          'f:replicas': {}
+          'f:selector':
+            .: {}
+            'f:name': {}
+          'f:strategy':
+            'f:activeDeadlineSeconds': {}
+            'f:recreateParams':
+              .: {}
+              'f:timeoutSeconds': {}
+            'f:type': {}
+          'f:template':
+            .: {}
+            'f:metadata':
+              .: {}
+              'f:annotations':
+                .: {}
+                'f:openshift.io/generated-by': {}
+              'f:creationTimestamp': {}
+              'f:labels':
+                .: {}
+                'f:name': {}
+            'f:spec':
+              .: {}
+              'f:containers':
+                .: {}
+                'k:{"name":"mysql"}':
+                  'f:volumeMounts':
+                    .: {}
+                    'k:{"mountPath":"/var/lib/mysql/data"}':
+                      .: {}
+                      'f:mountPath': {}
+                      'f:name': {}
+                  'f:terminationMessagePolicy': {}
+                  .: {}
+                  'f:resources':
+                    .: {}
+                    'f:limits':
+                      .: {}
+                      'f:memory': {}
+                  'f:livenessProbe':
+                    .: {}
+                    'f:exec':
+                      .: {}
+                      'f:command': {}
+                    'f:failureThreshold': {}
+                    'f:initialDelaySeconds': {}
+                    'f:periodSeconds': {}
+                    'f:successThreshold': {}
+                    'f:timeoutSeconds': {}
+                  'f:env':
+                    .: {}
+                    'k:{"name":"MYSQL_DATABASE"}':
+                      .: {}
+                      'f:name': {}
+                      'f:valueFrom':
+                        .: {}
+                        'f:secretKeyRef': {}
+                    'k:{"name":"MYSQL_PASSWORD"}':
+                      .: {}
+                      'f:name': {}
+                      'f:valueFrom':
+                        .: {}
+                        'f:secretKeyRef': {}
+                    'k:{"name":"MYSQL_ROOT_PASSWORD"}':
+                      .: {}
+                      'f:name': {}
+                      'f:valueFrom':
+                        .: {}
+                        'f:secretKeyRef': {}
+                    'k:{"name":"MYSQL_USER"}':
+                      .: {}
+                      'f:name': {}
+                      'f:valueFrom':
+                        .: {}
+                        'f:secretKeyRef': {}
+                  'f:readinessProbe':
+                    .: {}
+                    'f:exec':
+                      .: {}
+                      'f:command': {}
+                    'f:failureThreshold': {}
+                    'f:initialDelaySeconds': {}
+                    'f:periodSeconds': {}
+                    'f:successThreshold': {}
+                    'f:timeoutSeconds': {}
+                  'f:terminationMessagePath': {}
+                  'f:imagePullPolicy': {}
+                  'f:ports':
+                    .: {}
+                    'k:{"containerPort":3306,"protocol":"TCP"}':
+                      .: {}
+                      'f:containerPort': {}
+                      'f:protocol': {}
+                  'f:name': {}
+              'f:dnsPolicy': {}
+              'f:restartPolicy': {}
+              'f:schedulerName': {}
+              'f:securityContext': {}
+              'f:terminationGracePeriodSeconds': {}
+              'f:volumes':
+                .: {}
+                'k:{"name":"mysql-data"}':
+                  .: {}
+                  'f:name': {}
+                  'f:persistentVolumeClaim':
+                    .: {}
+                    'f:claimName': {}
+    - manager: openshift-controller-manager
+      operation: Update
+      apiVersion: apps.openshift.io/v1
+      time: '2025-08-14T12:40:57Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:spec':
+          'f:template':
+            'f:spec':
+              'f:containers':
+                'k:{"name":"mysql"}':
+                  'f:image': {}
+          'f:triggers': {}
+    - manager: openshift-controller-manager
+      operation: Update
+      apiVersion: apps.openshift.io/v1
+      time: '2025-08-14T12:41:21Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:status':
+          'f:updatedReplicas': {}
+          'f:readyReplicas': {}
+          'f:conditions':
+            .: {}
+            'k:{"type":"Available"}':
+              .: {}
+              'f:lastTransitionTime': {}
+              'f:lastUpdateTime': {}
+              'f:message': {}
+              'f:status': {}
+              'f:type': {}
+            'k:{"type":"Progressing"}':
+              .: {}
+              'f:lastTransitionTime': {}
+              'f:lastUpdateTime': {}
+              'f:message': {}
+              'f:reason': {}
+              'f:status': {}
+              'f:type': {}
+          'f:details':
+            .: {}
+            'f:causes': {}
+            'f:message': {}
+          'f:replicas': {}
+          'f:availableReplicas': {}
+          'f:observedGeneration': {}
+          'f:unavailableReplicas': {}
+          'f:latestVersion': {}
+      subresource: status
+  namespace: a0533-dev
+  labels:
+    app: mysql
+    app.kubernetes.io/component: mysql
+    app.kubernetes.io/instance: mysql
+    app.openshift.io/runtime: mysql-database
+    template: mysql-persistent-template
+spec:
+  strategy:
+    type: Recreate
+    recreateParams:
+      timeoutSeconds: 600
+    resources: {}
+    activeDeadlineSeconds: 21600
+  triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - mysql
+        from:
+          kind: ImageStreamTag
+          namespace: openshift
+          name: 'mysql:8.0-el8'
+        lastTriggeredImage: 'image-registry.openshift-image-registry.svc:5000/openshift/mysql@sha256:18b26117161cf143c8b437fc3e5cadad1f65a4583cc9ea5fdf0b7c7b7b6eb81e'
+    - type: ConfigChange
+  replicas: 1
+  revisionHistoryLimit: 10
+  test: false
+  selector:
+    name: mysql
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        name: mysql
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+    spec:
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql
+      containers:
+        - resources:
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-i'
+                - '-c'
+                - MYSQL_PWD="$MYSQL_PASSWORD" mysqladmin -u $MYSQL_USER ping
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          terminationMessagePath: /dev/termination-log
+          name: mysql
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-i'
+                - '-c'
+                - MYSQL_PWD="$MYSQL_PASSWORD" mysqladmin -u $MYSQL_USER ping
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          env:
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql
+                  key: database-user
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql
+                  key: database-password
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql
+                  key: database-root-password
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql
+                  key: database-name
+          ports:
+            - containerPort: 3306
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql/data
+          terminationMessagePolicy: File
+          image: 'image-registry.openshift-image-registry.svc:5000/openshift/mysql@sha256:18b26117161cf143c8b437fc3e5cadad1f65a4583cc9ea5fdf0b7c7b7b6eb81e'
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+status:
+  observedGeneration: 2
+  details:
+    message: config change
+    causes:
+      - type: ConfigChange
+  availableReplicas: 1
+  unavailableReplicas: 0
+  latestVersion: 1
+  updatedReplicas: 1
+  conditions:
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2025-08-14T12:41:18Z'
+      lastTransitionTime: '2025-08-14T12:41:18Z'
+      message: Deployment config has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2025-08-14T12:41:21Z'
+      lastTransitionTime: '2025-08-14T12:41:21Z'
+      reason: NewReplicationControllerAvailable
+      message: replication controller "mysql-1" successfully rolled out
+  replicas: 1
+  readyReplicas: 1

@@ -1,0 +1,99 @@
+﻿kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftNewApp
+    pv.kubernetes.io/bind-completed: 'yes'
+    pv.kubernetes.io/bound-by-controller: 'yes'
+    volume.beta.kubernetes.io/storage-provisioner: ebs.csi.aws.com
+    volume.kubernetes.io/selected-node: ip-10-0-67-102.ec2.internal
+    volume.kubernetes.io/storage-provisioner: ebs.csi.aws.com
+  resourceVersion: '2518348667'
+  name: mysql
+  uid: d325a982-1b12-4c59-8f10-5e6b971c867a
+  creationTimestamp: '2025-08-14T12:40:56Z'
+  managedFields:
+    - manager: oc
+      operation: Update
+      apiVersion: v1
+      time: '2025-08-14T12:40:56Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:openshift.io/generated-by': {}
+          'f:labels':
+            .: {}
+            'f:app': {}
+            'f:app.kubernetes.io/component': {}
+            'f:app.kubernetes.io/instance': {}
+            'f:app.openshift.io/runtime': {}
+            'f:template': {}
+        'f:spec':
+          'f:accessModes': {}
+          'f:resources':
+            'f:requests':
+              .: {}
+              'f:storage': {}
+          'f:volumeMode': {}
+    - manager: kube-scheduler
+      operation: Update
+      apiVersion: v1
+      time: '2025-08-14T12:40:59Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            'f:volume.kubernetes.io/selected-node': {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2025-08-14T12:41:01Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            'f:pv.kubernetes.io/bind-completed': {}
+            'f:pv.kubernetes.io/bound-by-controller': {}
+            'f:volume.beta.kubernetes.io/storage-provisioner': {}
+            'f:volume.kubernetes.io/storage-provisioner': {}
+        'f:spec':
+          'f:volumeName': {}
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2025-08-14T12:41:01Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:status':
+          'f:accessModes': {}
+          'f:capacity':
+            .: {}
+            'f:storage': {}
+          'f:phase': {}
+      subresource: status
+  namespace: a0533-dev
+  finalizers:
+    - kubernetes.io/pvc-protection
+  labels:
+    app: mysql
+    app.kubernetes.io/component: mysql
+    app.kubernetes.io/instance: mysql
+    app.openshift.io/runtime: mysql-database
+    template: mysql-persistent-template
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: pvc-d325a982-1b12-4c59-8f10-5e6b971c867a
+  storageClassName: gp3
+  volumeMode: Filesystem
+status:
+  phase: Bound
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi

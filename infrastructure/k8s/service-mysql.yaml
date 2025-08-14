@@ -1,0 +1,68 @@
+﻿kind: Service
+apiVersion: v1
+metadata:
+  name: mysql
+  namespace: a0533-dev
+  uid: 4a00a911-fc92-4b8c-84e2-e45e5ad35280
+  resourceVersion: '2518346859'
+  creationTimestamp: '2025-08-14T12:40:56Z'
+  labels:
+    app: mysql
+    app.kubernetes.io/component: mysql
+    app.kubernetes.io/instance: mysql
+    app.openshift.io/runtime: mysql-database
+    template: mysql-persistent-template
+  annotations:
+    openshift.io/generated-by: OpenShiftNewApp
+    template.openshift.io/expose-uri: 'mysql://{.spec.clusterIP}:{.spec.ports[?(.name=="mysql")].port}'
+  managedFields:
+    - manager: oc
+      operation: Update
+      apiVersion: v1
+      time: '2025-08-14T12:40:56Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:openshift.io/generated-by': {}
+            'f:template.openshift.io/expose-uri': {}
+          'f:labels':
+            .: {}
+            'f:app': {}
+            'f:app.kubernetes.io/component': {}
+            'f:app.kubernetes.io/instance': {}
+            'f:app.openshift.io/runtime': {}
+            'f:template': {}
+        'f:spec':
+          'f:internalTrafficPolicy': {}
+          'f:ports':
+            .: {}
+            'k:{"port":3306,"protocol":"TCP"}':
+              .: {}
+              'f:name': {}
+              'f:port': {}
+              'f:protocol': {}
+              'f:targetPort': {}
+          'f:selector': {}
+          'f:sessionAffinity': {}
+          'f:type': {}
+spec:
+  clusterIP: 172.30.45.148
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: mysql
+      protocol: TCP
+      port: 3306
+      targetPort: 3306
+  internalTrafficPolicy: Cluster
+  clusterIPs:
+    - 172.30.45.148
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  selector:
+    name: mysql
+status:
+  loadBalancer: {}
