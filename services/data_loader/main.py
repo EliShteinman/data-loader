@@ -1,23 +1,14 @@
 import os
 from fastapi import FastAPI, HTTPException
 from .data_loader import DataLoader
+from contextlib import asynccontextmanager
 
-# Create a FastAPI app instance
-app = FastAPI(
-    title="Data Loader Service",
-    description="A service to fetch data from a MySQL database in OpenShift.",
-    version="1.0.0"
-)
 
-# --- Database Connection Setup ---
-# Read database credentials from environment variables.
-# This is crucial for security and flexibility in OpenShift.
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "password")
 DB_NAME = os.getenv("DB_NAME", "mydatabase")
 
-# Create an instance of our Data Access Layer
 data_loader = DataLoader(
     host=DB_HOST,
     user=DB_USER,
@@ -25,13 +16,24 @@ data_loader = DataLoader(
     database=DB_NAME
 )
 
-@app.on_event("startup")
-def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """
     On application startup, attempt to connect to the database.
     """
     print("Application startup: Initializing database connection...")
     data_loader.connect()
+    yield
+
+
+# Create a FastAPI app instance
+app = FastAPI(
+    title="Data Loader Service",
+    description="A service to fetch data from a MySQL database in OpenShift.",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
 
 @app.get("/data", summary="Get all data from the 'data' table")
 def get_data():
