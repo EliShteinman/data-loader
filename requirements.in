@@ -1,3 +1,9 @@
-mysql-connector-python
-requests
+# Core framework for the API
+fastapi
+
+# ASGI server to run the application
 uvicorn
+
+# ORM and DB Driver for MySQL
+sqlalchemy
+mysql-connector-python
