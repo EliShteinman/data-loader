@@ -75,42 +75,42 @@ echo "--- Route created."
 # -------------------------
 # שלב 2 (אימפרטיבי): יצירת Secret ו-PVC
 # -------------------------
-# oc create secret generic mysql-db-credentials --from-literal=MYSQL_ROOT_PASSWORD='...' --from-literal=...
-# oc apply -f infrastructure/k8s/02-mysql-pvc.yaml # (אין חלופה אימפרטיבית טובה ל-PVC)
-# echo "--- Secret and PVC created."
+oc create secret generic mysql-db-credentials --from-literal=MYSQL_ROOT_PASSWORD='...' --from-literal=...
+oc apply -f infrastructure/k8s/02-mysql-pvc.yaml # (אין חלופה אימפרטיבית טובה ל-PVC)
+echo "--- Secret and PVC created."
 
 # -------------------------
 # שלב 3 (אימפרטיבי): פריסת MySQL
 # -------------------------
-# oc new-app mysql:8.0 --name=mysql-db
-# oc set volume deployment/mysql-db --add --name=mysql-persistent-storage --type=pvc --claim-name=mysql-db-pvc --mount-path=/var/lib/mysql
-# oc set env deployment/mysql-db --from=secret/mysql-db-credentials
-# oc label deployment mysql-db app=mysql-db
-# echo "--- Waiting for MySQL to be ready..."
-# oc wait --for=condition=ready pod -l app=mysql-db --timeout=300s
-# echo "--- MySQL is ready!"
+oc new-app mysql:8.0 --name=mysql-db
+oc set volume deployment/mysql-db --add --name=mysql-persistent-storage --type=pvc --claim-name=mysql-db-pvc --mount-path=/var/lib/mysql
+oc set env deployment/mysql-db --from=secret/mysql-db-credentials
+oc label deployment mysql-db app=mysql-db
+echo "--- Waiting for MySQL to be ready..."
+oc wait --for=condition=ready pod -l app=mysql-db --timeout=300s
+echo "--- MySQL is ready!"
 
 # -------------------------
 # שלב 4 (אימפרטיבי): פריסת FastAPI
 # -------------------------
-# oc create deployment mysql-api --image=<your-dockerhub-username>/data-loader-service:manual-demo
-# oc label deployment mysql-api app=mysql-api
-# oc expose deployment mysql-api --port=8080 --name=mysql-api-service
+oc create deployment mysql-api --image=<your-dockerhub-username>/data-loader-service:manual-demo
+oc label deployment mysql-api app=mysql-api
+oc expose deployment mysql-api --port=8080 --name=mysql-api-service
 
-# --- הזרקת משתנים מ-Secret (הפקודה החסרה) ---
-# oc set env deployment/mysql-api DB_HOST=mysql-db-service
-# oc set env deployment/mysql-api --keys=MYSQL_DATABASE --from=secret/mysql-db-credentials --prefix=DB_
-# oc set env deployment/mysql-api --keys=MYSQL_USER --from=secret/mysql-db-credentials --prefix=DB_
-# oc set env deployment/mysql-api --keys=MYSQL_PASSWORD --from=secret/mysql-db-credentials --prefix=DB_
-# echo "--- Waiting for FastAPI to be ready..."
-# oc wait --for=condition=ready pod -l app=mysql-api --timeout=300s
-# echo "--- FastAPI is ready!"
+# --- הזרקת משתנים מ-Secret ---
+oc set env deployment/mysql-api DB_HOST=mysql-db-service
+oc set env deployment/mysql-api --keys=MYSQL_DATABASE --from=secret/mysql-db-credentials --prefix=DB_
+oc set env deployment/mysql-api --keys=MYSQL_USER --from=secret/mysql-db-credentials --prefix=DB_
+oc set env deployment/mysql-api --keys=MYSQL_PASSWORD --from=secret/mysql-db-credentials --prefix=DB_
+echo "--- Waiting for FastAPI to be ready..."
+oc wait --for=condition=ready pod -l app=mysql-api --timeout=300s
+echo "--- FastAPI is ready!"
 
 # -------------------------
 # שלב 5 (אימפרטיבי): חשיפת האפליקציה (Route)
 # -------------------------
-# oc expose service mysql-api-service --name=mysql-api-route
-# echo "--- Route created."
+oc expose service mysql-api-service --name=mysql-api-route
+echo "--- Route created."
 
 
 # =============================================================================
