@@ -9,6 +9,9 @@
 # התחברות ל-OpenShift (בצע לפני ההדגמה)
 oc login --token=<your-token> --server=<your-server-url>
 
+# ניקוי פרויקט קודם אם קיים
+# oc delete project my-live-demo
+
 # יצירת פרויקט חדש ונקי
 oc new-project my-live-demo
 
@@ -25,86 +28,94 @@ docker build -t <your-dockerhub-username>/data-loader-service:manual-demo .
 docker push <your-dockerhub-username>/data-loader-service:manual-demo
 
 
-# -------------------------
-# שלב 2: יצירת Secret לסיסמאות
-# -------------------------
+# =============================================================================
+#         >>> שיטה א': הדרך המומלצת (דקלרטיבית עם YAML) <<<
+# =============================================================================
 
-# שיטה א' (דקלרטיבית - YAML)
+# -------------------------
+# שלב 2 (YAML): יצירת Secret ו-PVC
+# -------------------------
 oc apply -f infrastructure/k8s/01-mysql-secret.yaml
-
-# שיטה ב' (אימפרטיבית - פקודה ישירה)
-# oc create secret generic mysql-db-credentials \
-#   --from-literal=MYSQL_ROOT_PASSWORD='kjytfcryegbfy8679hcsrdfgcvdu' \
-#   --from-literal=MYSQL_DATABASE='mydatabase' \
-#   --from-literal=MYSQL_USER='myuser' \
-#   --from-literal=MYSQL_PASSWORD='ghjsdcbxyf67rgevtc76'
-
-# בדיקה שה-Secret נוצר
-oc get secret mysql-db-credentials -o yaml
-
-
-# -------------------------
-# שלב 3: יצירת אחסון קבוע (PVC)
-# -------------------------
-
 oc apply -f infrastructure/k8s/02-mysql-pvc.yaml
-
-# בדיקה שה-PVC נוצר ובמצב 'Bound'
-oc get pvc
-
+echo "--- Secret and PVC created."
+oc get secret,pvc
 
 # -------------------------
-# שלב 4: פריסת MySQL (Deployment + Service)
+# שלב 3 (YAML): פריסת MySQL
 # -------------------------
-
-# שיטה א' (דקלרטיבית - YAML)
 oc apply -f infrastructure/k8s/03-mysql-deployment.yaml
 oc apply -f infrastructure/k8s/04-mysql-service.yaml
-
-# שיטה ב' (אימפרטיבית - oc new-app)
-# oc new-app mysql:8.0 --name=mysql-db
-# oc set env deployment/mysql-db --from=secret/mysql-db-credentials
-# oc set volume deployment/mysql-db --add --name=mysql-persistent-storage --type=persistentVolumeClaim --claim-name=mysql-db-pvc --mount-path=/var/lib/mysql
-
-# המתנה לסיום הפריסה
-echo "Waiting for MySQL pod to be ready..."
+echo "--- Waiting for MySQL to be ready..."
 oc wait --for=condition=ready pod -l app=mysql-db --timeout=300s
-echo "MySQL is ready!"
-
+echo "--- MySQL is ready!"
 
 # -------------------------
-# שלב 5: פריסת אפליקציית FastAPI
+# שלב 4 (YAML): פריסת FastAPI
 # -------------------------
-
-# --- שיטה א' (דקלרטיבית - YAML) ---
-# החלף את <your-dockerhub-username> בשם המשתמש שלך לפני הרצת הפקודה
+# החלף את <your-dockerhub-username> בשם המשתמש שלך
 sed -e "s|YOUR_DOCKERHUB_USERNAME|<your-dockerhub-username>|g" \
     -e "s|:latest|:manual-demo|g" \
     "infrastructure/k8s/05-fastapi-deployment.yaml" | oc apply -f -
-
 oc apply -f infrastructure/k8s/06-fastapi-service.yaml
+echo "--- Waiting for FastAPI to be ready..."
+oc wait --for=condition=ready pod -l app=mysql-api --timeout=300s
+echo "--- FastAPI is ready!"
 
+# -------------------------
+# שלב 5 (YAML): חשיפת האפליקציה (Route)
+# -------------------------
+oc apply -f infrastructure/k8s/07-fastapi-route.yaml
+echo "--- Route created."
 
-# --- שיטה ב' (אימפרטיבית - oc create / oc set env) ---
-# החלף את <your-dockerhub-username> בשם המשתמש שלך לפני הרצת הפקודה
-# 1. יצירת ה-Deployment
+# =============================================================================
+#       >>> שיטה ב': הדרך החלופית (אימפרטיבית עם פקודות ישירות) <<<
+#       (כדי להשתמש בשיטה זו, יש להסיר את ההערות ולהריץ כל בלוק בנפרד)
+# =============================================================================
+
+# -------------------------
+# שלב 2 (אימפרטיבי): יצירת Secret ו-PVC
+# -------------------------
+# oc create secret generic mysql-db-credentials --from-literal=MYSQL_ROOT_PASSWORD='...' --from-literal=...
+# oc apply -f infrastructure/k8s/02-mysql-pvc.yaml # (אין חלופה אימפרטיבית טובה ל-PVC)
+# echo "--- Secret and PVC created."
+
+# -------------------------
+# שלב 3 (אימפרטיבי): פריסת MySQL
+# -------------------------
+# oc new-app mysql:8.0 --name=mysql-db
+# oc set volume deployment/mysql-db --add --name=mysql-persistent-storage --type=pvc --claim-name=mysql-db-pvc --mount-path=/var/lib/mysql
+# oc set env deployment/mysql-db --from=secret/mysql-db-credentials
+# oc label deployment mysql-db app=mysql-db
+# echo "--- Waiting for MySQL to be ready..."
+# oc wait --for=condition=ready pod -l app=mysql-db --timeout=300s
+# echo "--- MySQL is ready!"
+
+# -------------------------
+# שלב 4 (אימפרטיבי): פריסת FastAPI
+# -------------------------
 # oc create deployment mysql-api --image=<your-dockerhub-username>/data-loader-service:manual-demo
-
-# 2. הזרקת משתני הסביבה (דרך פחות מאובטחת להדגמה)
-# oc set env deployment/mysql-api \
-#   DB_HOST=mysql-db-service \
-#   DB_NAME=mydatabase \
-#   DB_USER=myuser \
-#   DB_PASSWORD=ghjsdcbxyf67rgevtc76
-
-# 3. יצירת ה-Service עבור ה-Deployment
+# oc label deployment mysql-api app=mysql-api
 # oc expose deployment mysql-api --port=8080 --name=mysql-api-service
 
-# המתנה לסיום הפריסה (עובד עבור שתי השיטות)
-echo "Waiting for FastAPI pod to be ready..."
-oc wait --for=condition=ready pod -l app=mysql-api --timeout=300s
-echo "FastAPI is ready!"
+# --- הזרקת משתנים מ-Secret (הפקודה החסרה) ---
+# oc set env deployment/mysql-api DB_HOST=mysql-db-service
+# oc set env deployment/mysql-api --keys=MYSQL_DATABASE --from=secret/mysql-db-credentials --prefix=DB_
+# oc set env deployment/mysql-api --keys=MYSQL_USER --from=secret/mysql-db-credentials --prefix=DB_
+# oc set env deployment/mysql-api --keys=MYSQL_PASSWORD --from=secret/mysql-db-credentials --prefix=DB_
+# echo "--- Waiting for FastAPI to be ready..."
+# oc wait --for=condition=ready pod -l app=mysql-api --timeout=300s
+# echo "--- FastAPI is ready!"
 
+# -------------------------
+# שלב 5 (אימפרטיבי): חשיפת האפליקציה (Route)
+# -------------------------
+# oc expose service mysql-api-service --name=mysql-api-route
+# echo "--- Route created."
+
+
+# =============================================================================
+#           >>> המשך התהליך (זהה לשתי השיטות) <<<
+# =============================================================================
 
 # -------------------------
 # שלב 6: אתחול הנתונים ב-DB
@@ -128,16 +139,9 @@ echo "Database initialized successfully!"
 
 
 # -------------------------
-# שלב 7: חשיפת האפליקציה (Route)
+# שלב 7: מציאת הכתובת ובדיקה
 # -------------------------
 
-# שיטה א' (דקלרטיבית - YAML)
-oc apply -f infrastructure/k8s/07-fastapi-route.yaml
-
-# שיטה ב' (אימפרטיבית - oc expose)
-# oc expose service mysql-api-service --name=mysql-api-route
-
-# מציאת הכתובת ובדיקה
 ROUTE_URL=$(oc get route mysql-api-route -o jsonpath='{.spec.host}')
 echo "======================================================"
 echo "Application URL: http://${ROUTE_URL}"
@@ -150,10 +154,6 @@ echo "======================================================"
 # שלב 8: ניקוי הסביבה (בסוף ההדגמה)
 # -------------------------
 
-oc delete all --selector=app=mysql-api
-oc delete all --selector=app=mysql-db
-oc delete pvc mysql-db-pvc
-oc delete secret mysql-db-credentials
-
-# או בקיצור:
-# oc delete -f infrastructure/k8s/
+# הדרך המהירה והיסודית ביותר לנקות הכל היא למחוק את הפרויקט כולו.
+echo "To clean up all resources, run: oc delete project my-live-demo"
+oc delete -f infrastructure/k8s/
