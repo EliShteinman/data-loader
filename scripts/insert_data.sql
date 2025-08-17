@@ -1,14 +1,7 @@
+-- This script inserts some initial sample data into the 'data' table.
 INSERT INTO data (first_name, last_name) VALUES
-('aaron','abad'),
-('abas','abaldo'),
-('abbie','abarca'),
-('abby','abbott'),
-('abdul','abbruscato'),
-('abel','abdias'),
-('abelardo','abel'),
-('abelrai','abigail'),
-('abigail','abito'),
-('abisara','abogada'),
-('abogada','abogado'),
-('abogados','aboud'),
-('abraham','abouon');
+('John', 'Doe'),
+('Jane', 'Smith'),
+('Peter', 'Jones'),
+('Emily', 'Williams'),
+('Michael', 'Brown');
