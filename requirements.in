@@ -4,6 +4,5 @@ fastapi
 # ASGI server to run the application
 uvicorn
 
-# ORM and DB Driver for MySQL
-sqlalchemy
+# DB Driver for MySQL
 mysql-connector-python
