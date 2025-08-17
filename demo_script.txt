@@ -76,6 +76,7 @@ echo "MySQL is ready!"
 # שלב 5: פריסת אפליקציית FastAPI
 # -------------------------
 
+# --- שיטה א' (דקלרטיבית - YAML) ---
 # החלף את <your-dockerhub-username> בשם המשתמש שלך לפני הרצת הפקודה
 sed -e "s|YOUR_DOCKERHUB_USERNAME|<your-dockerhub-username>|g" \
     -e "s|:latest|:manual-demo|g" \
@@ -83,7 +84,23 @@ sed -e "s|YOUR_DOCKERHUB_USERNAME|<your-dockerhub-username>|g" \
 
 oc apply -f infrastructure/k8s/06-fastapi-service.yaml
 
-# המתנה לסיום הפריסה
+
+# --- שיטה ב' (אימפרטיבית - oc create / oc set env) ---
+# החלף את <your-dockerhub-username> בשם המשתמש שלך לפני הרצת הפקודה
+# 1. יצירת ה-Deployment
+# oc create deployment mysql-api --image=<your-dockerhub-username>/data-loader-service:manual-demo
+
+# 2. הזרקת משתני הסביבה (דרך פחות מאובטחת להדגמה)
+# oc set env deployment/mysql-api \
+#   DB_HOST=mysql-db-service \
+#   DB_NAME=mydatabase \
+#   DB_USER=myuser \
+#   DB_PASSWORD=ghjsdcbxyf67rgevtc76
+
+# 3. יצירת ה-Service עבור ה-Deployment
+# oc expose deployment mysql-api --port=8080 --name=mysql-api-service
+
+# המתנה לסיום הפריסה (עובד עבור שתי השיטות)
 echo "Waiting for FastAPI pod to be ready..."
 oc wait --for=condition=ready pod -l app=mysql-api --timeout=300s
 echo "FastAPI is ready!"
@@ -118,7 +135,7 @@ echo "Database initialized successfully!"
 oc apply -f infrastructure/k8s/07-fastapi-route.yaml
 
 # שיטה ב' (אימפרטיבית - oc expose)
-# oc expose service mysql-api-service --name=mysql-api-route-imperative
+# oc expose service mysql-api-service --name=mysql-api-route
 
 # מציאת הכתובת ובדיקה
 ROUTE_URL=$(oc get route mysql-api-route -o jsonpath='{.spec.host}')
