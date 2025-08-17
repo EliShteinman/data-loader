@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: fastapi-container
-          image: "docker.io/a0533057932/data-loader-service:latest"
+          image: "docker.io/YOUR_DOCKERHUB_USERNAME/data-loader-service:latest"
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

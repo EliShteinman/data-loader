@@ -44,76 +44,49 @@ data-loader/
 └── README.md                  # This documentation file
 ```
 
-## Deployment to OpenShift (Primary Method)
+## Deployment to OpenShift (Automated)
 
-This project is designed to be deployed end-to-end using the provided script.
+This project is designed to be deployed end-to-end with a single script.
 
 ### Prerequisites
 
 1.  Access to an OpenShift cluster.
-2.  The `oc` (OpenShift CLI) command-line tool installed and configured.
+2.  The `oc` (OpenShift CLI) command-line tool installed and authenticated.
 3.  A Docker Hub account.
-4.  Docker Desktop (or Docker daemon) installed and running locally.
+4.  Docker Desktop (or Docker daemon) installed, running, and authenticated (`docker login`).
 
-### Step-by-Step Instructions
+### Deployment Steps
 
-1.  **Login to OpenShift CLI:**
-    Open your terminal and log in to your OpenShift cluster.
+1.  **Select Your OpenShift Project:**
+    Ensure you are in the correct OpenShift project where you want to deploy the resources.
     ```bash
-    oc login --token=<your-token> --server=<your-server-url>
-    ```
-
-2.  **Select Your Project:**
-    Choose the project (namespace) you want to deploy into. All resources will be created here.
-    ```bash
-    # Replace <your-project-name> with your actual project, e.g., a0533-dev
+    # Replace <your-project-name> with your actual project
     oc project <your-project-name>
     ```
 
-3.  **Login to Docker Hub:**
-    Log in to your Docker Hub account to enable pushing the application image.
-    ```bash
-    docker login
-    ```
-
-4.  **Build and Push the Docker Image:**
-    Navigate to the project's root directory (`data-loader`). Build the Docker image and push it to your Docker Hub repository.
-    **Important:** Replace `YOUR_DOCKERHUB_USERNAME` with your actual Docker Hub username.
-    ```bash
-    # Build the image
-    docker build -t YOUR_DOCKERHUB_USERNAME/data-loader-service:latest .
-
-    # Push the image
-    docker push YOUR_DOCKERHUB_USERNAME/data-loader-service:latest
-    ```
-    You also need to update the image path in `infrastructure/k8s/05-fastapi-deployment.yaml` to match the image you just pushed.
-
-5.  **Run the Deployment Script:**
-    The provided script automates the entire process of creating secrets, storage, deployments, services, and initializing the database.
+2.  **Run the Deployment Script:**
+    The script automates everything: building and pushing the image, creating secrets, storage, deployments, services, and initializing the database.
 
     *   **On macOS or Linux:**
+        Navigate to the project's root directory.
         ```bash
-        # First, make the script executable (only needs to be done once)
+        # First, make the script executable
         chmod +x scripts/commands.sh
         
-        # Run the script from the project root directory
-        ./scripts/commands.sh
+        # Run the script, providing your Docker Hub username as an argument
+        ./scripts/commands.sh your-dockerhub-username
         ```
     *   **On Windows:**
-        ```bash
-        # Run the script from the scripts directory
-        cd scripts
-        commands.bat
+        Navigate to the project's root directory.
+        ```batch
+        REM Run the script, providing your Docker Hub username as an argument
+        .\scripts\commands.bat your-dockerhub-username
         ```
 
-6.  **Verify the Deployment:**
-    After the script finishes, it will instruct you to find your application's public URL.
-    ```bash
-    oc get route fastapi-route
-    ```
-    Copy the URL from the `HOST/PORT` column and paste it into your browser. To see the data, append `/data` to the URL.
-
-    Example: `http://fastapi-route-my-project.example.com/data`
+3.  **Access the Application:**
+    The script will print the final application URL upon completion. To see the data, append `/data` to the URL, or `/docs` for the interactive API documentation.
+    
+    Example: `http://mysql-api-route-my-project.example.com/data`
 
 ## Key Components Explained
 
