@@ -101,9 +101,3 @@ For a detailed, step-by-step guide with explanations for each command, ideal for
 This guide is in Hebrew and provides separate commands for different operating systems.
 
 ---
-
-## Future Improvements
-
--   **CI/CD Pipeline:** Integrate a CI/CD tool (like Jenkins, GitLab CI, or GitHub Actions) to automate testing, building, and deploying on every push to the main branch.
--   **Enhanced Dockerfile:** Implement a multi-stage Docker build to reduce the final image size and run the application as a non-root user for improved security.
--   **Unit & Integration Tests:** Add a testing suite (`pytest`) to validate the API and DAL functionality.
