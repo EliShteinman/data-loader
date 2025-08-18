@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: mysql-db-config
   labels:
-    test: a
+    app.kubernetes.io/part-of: data-loader-app
 data:
   MYSQL_DATABASE: "mydatabase"
   MYSQL_USER: "myuser"

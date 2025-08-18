@@ -28,6 +28,20 @@ spec:
                 name: mysql-db-config
             - secretRef:
                 name: mysql-db-credentials
+          readinessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "127.0.0.1"]
+            initialDelaySeconds: 15
+            timeoutSeconds: 2
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "127.0.0.1"]
+            initialDelaySeconds: 45
+            timeoutSeconds: 2
+            periodSeconds: 20
+            failureThreshold: 3
           resources:
             requests:
               cpu: "100m"
