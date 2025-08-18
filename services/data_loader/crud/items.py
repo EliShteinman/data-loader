@@ -1,9 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from typing import List, Dict, Any
 from .. import models
-from ..main import (
-    data_loader,
-)  # Import the shared data_loader instance from the main app
+from ..core.dependencies import data_loader
 
 # Create a new router object. This acts like a 'mini-FastAPI' application.
 router = APIRouter(

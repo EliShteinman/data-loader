@@ -66,7 +66,7 @@ class DataLoader_Basic:
 
 #### דוגמת קוד: `DataLoader` משודרג עם Pool
 ```python
-# services/data_loader/data_loader.py (הגרסה הנוכחית)
+# services/data_loader/dal.py (הגרסה הנוכחית)
 from mysql.connector import pooling
 
 class DataLoader:

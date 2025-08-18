@@ -1,28 +1,14 @@
-import os
 from fastapi import FastAPI, HTTPException
 from contextlib import asynccontextmanager
+from typing import List
 
-# Import the shared components: the data access layer and the API routers
-from .data_loader import DataLoader
-from .routers import items
-
-# --- Step 1: Configuration ---
-# Read database connection settings from environment variables.
-# These are injected by the OpenShift Deployment manifest.
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_USER = os.getenv("DB_USER", "root")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "password")
-DB_NAME = os.getenv("DB_NAME", "mydatabase")
-
-# --- Step 2: Singleton Instance Creation ---
-# Create a single, shared instance of the DataLoader.
-# This object will be used by all API endpoints to interact with the database.
-data_loader = DataLoader(
-    host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME
-)
+# Import the shared components: the data access layer, API routers, and models
+from .core.dependencies import data_loader
+from .crud import items
+from . import models
 
 
-# --- Step 3: Lifespan Management ---
+# --- Lifespan Management ---
 # Define logic that runs once on application startup and once on shutdown.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,7 +23,7 @@ async def lifespan(app: FastAPI):
     data_loader.close()
 
 
-# --- Step 4: FastAPI App Instantiation ---
+# --- FastAPI App Instantiation ---
 # Create the main FastAPI application instance.
 app = FastAPI(
     title="Data Loader Service",
@@ -46,17 +32,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# --- Step 5: Include Routers ---
+# --- Include Routers ---
 # Mount the CRUD API router into the main application.
 # All endpoints from `items.py` will be included under the `/items` prefix.
 app.include_router(items.router)
 
-# --- Step 6: Define Core/Legacy Endpoints ---
+# --- Define Core/Legacy Endpoints ---
 # These endpoints are defined directly on the main 'app' object.
 
 
 @app.get(
     "/data",
+    # ★★★ הוספת ה-response_model ★★★
+    response_model=List[models.Item],
     summary="Get all data (Legacy)",
     description="The original endpoint to fetch all records from the 'data' table.",
     tags=["Legacy"],
