@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-db-config
+  labels:
+    test: a
+data:
+  MYSQL_DATABASE: "mydatabase"
+  MYSQL_USER: "myuser"

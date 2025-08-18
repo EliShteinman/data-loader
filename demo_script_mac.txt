@@ -1,0 +1,212 @@
+# =============================================================================
+#           מדריך פקודות להדגמה חיה - OpenShift Data Loader
+# =============================================================================
+# מדריך זה מציג פריסה מלאה של אפליקציה ותשתית ל-OpenShift.
+
+# -------------------------
+# שלב 0: הכנות
+# -------------------------
+
+# התחברות ל-OpenShift (בצע לפני ההדגמה)
+oc login --token=<your-token> --server=<your-server-url>
+
+# יצירת פרויקט חדש ונקי
+oc new-project my-live-demo
+
+# התחברות ל-Docker Hub (בצע לפני ההדגמה)
+docker login
+
+# --- הגדרת משתנים ---
+# !!! חשוב: החלף את 'your-dockerhub-username' בשם המשתמש שלך ב-Docker Hub !!!
+export DOCKERHUB_USERNAME='your-dockerhub-username'
+
+
+# -------------------------
+# שלב 1: בניית Docker Image
+# -------------------------
+
+# יצירת תג ייחודי להדגמה כדי להבטיח שהגרסה החדשה ביותר נמשכת
+export IMAGE_TAG=manual-demo-$(date +%s)
+
+# הפקודה תשתמש אוטומטית במשתנה DOCKERHUB_USERNAME שהגדרת בשלב הקודם
+echo "Building and pushing image: ${DOCKERHUB_USERNAME}/data-loader-service:${IMAGE_TAG}"
+docker buildx build --platform linux/amd64,linux/arm64 --no-cache -t ${DOCKERHUB_USERNAME}/data-loader-service:${IMAGE_TAG} --push ..
+
+
+# =============================================================================
+#         >>> שיטה א': הדרך המומלצת (דקלרטיבית עם YAML) <<<
+# =============================================================================
+# שיטה זו משתמשת בקבצי תצורה (מניפסטים) כדי להגדיר את המצב הרצוי של המערכת.
+
+# -------------------------
+# שלב 2 (YAML): יצירת תצורה, סודות ואחסון
+# -------------------------
+# כפרקטיקה מומלצת, אנו מפרידים בין תצורה כללית (ConfigMap) למידע רגיש (Secret).
+oc apply -f infrastructure/k8s/00-mysql-configmap.yaml
+oc apply -f infrastructure/k8s/01-mysql-secret.yaml
+oc apply -f infrastructure/k8s/02-mysql-pvc.yaml
+echo "--- ConfigMap, Secret and PVC created."
+oc get configmap,secret,pvc
+
+# -------------------------
+# שלב 3 (YAML): פריסת MySQL
+# -------------------------
+# נפרוס את מסד הנתונים באמצעות Deployment ו-Service.
+oc apply -f infrastructure/k8s/03-mysql-deployment.yaml
+oc apply -f infrastructure/k8s/04-mysql-service.yaml
+echo "--- Waiting for MySQL pod to become ready..."
+oc wait --for=condition=ready pod -l app.kubernetes.io/instance=mysql-db --timeout=300s
+echo "--- MySQL pod is ready. Allowing time for internal database initialization..."
+sleep 15
+echo "--- MySQL is fully initialized!"
+
+# -------------------------
+# שלב 4 (YAML): פריסת FastAPI
+# -------------------------
+# נפרוס את שירות ה-API. הפקודה הבאה משתמשת ב-sed כדי להחליף את שם המשתמש והתג ב-YAML באופן דינמי.
+sed -e "s|YOUR_DOCKERHUB_USERNAME|${DOCKERHUB_USERNAME}|g" \
+    -e "s|:latest|:${IMAGE_TAG}|g" \
+    "infrastructure/k8s/05-fastapi-deployment.yaml" | oc apply -f -
+oc apply -f infrastructure/k8s/06-fastapi-service.yaml
+echo "--- Waiting for FastAPI to be ready..."
+oc wait --for=condition=ready pod -l app.kubernetes.io/instance=mysql-api --timeout=300s
+echo "--- FastAPI is ready!"
+
+# -------------------------
+# שלב 5 (YAML): חשיפת האפליקציה (Route)
+# -------------------------
+oc apply -f infrastructure/k8s/07-fastapi-route.yaml
+echo "--- Route created."
+
+# =============================================================================
+#       >>> שיטה ב': הדרך החלופית (אימפרטיבית עם פקודות ישירות) <<<
+#       (כדי להשתמש בשיטה זו, יש למחוק את הרכיבים משיטה א' ולהריץ כל בלוק בנפרד)
+# =============================================================================
+# שיטה זו משתמשת בפקודות ישירות כדי ליצור כל רכיב.
+# היא טובה לפעולות מהירות ולפיתוח, אך פחות מומלצת לניהול סביבות מורכבות.
+
+# -------------------------
+# שלב 2 (אימפרטיבי): יצירת תצורה, סודות ואחסון
+# -------------------------
+oc create configmap mysql-db-config --from-literal=MYSQL_DATABASE=mydatabase --from-literal=MYSQL_USER=myuser
+oc create secret generic mysql-db-credentials --from-literal=MYSQL_ROOT_PASSWORD='...' --from-literal=MYSQL_PASSWORD='...'
+oc apply -f infrastructure/k8s/02-mysql-pvc.yaml # (אין חלופה אימפרטיבית טובה ל-PVC)
+echo "--- ConfigMap, Secret and PVC created."
+
+# -------------------------
+# שלב 3 (אימפרטיבי): פריסת MySQL
+# -------------------------
+oc new-app mysql:8.0 --name=mysql-db
+oc set volume deployment/mysql-db --add --name=mysql-persistent-storage --type=pvc --claim-name=mysql-db-pvc --mount-path=/var/lib/mysql
+# הזרקת משתנים משני המקורות
+oc set env deployment/mysql-db --from=configmap/mysql-db-config
+oc set env deployment/mysql-db --from=secret/mysql-db-credentials
+# הוספת התוויות הנדרשות כדי שה-Service ימצא את ה-Pod
+oc label deployment mysql-db app.kubernetes.io/instance=mysql-db
+echo "--- Waiting for MySQL to be ready..."
+oc wait --for=condition=ready pod -l app.kubernetes.io/instance=mysql-db --timeout=300s
+echo "--- MySQL is ready!"
+
+# שלב 4 (אימפרטיבי): פריסת FastAPI
+# -------------------------
+# הפקודה תשתמש במשתנים שהגדרנו בתחילת המדריך
+oc create deployment mysql-api --image=${DOCKERHUB_USERNAME}/data-loader-service:${IMAGE_TAG}
+# הוספת התוויות הנדרשות
+oc label deployment mysql-api app.kubernetes.io/instance=mysql-api
+# הזרקת משתני סביבה מה-ConfigMap וה-Secret
+oc set env deployment/mysql-api DB_HOST=mysql-db-service
+oc set env deployment/mysql-api --from=configmap/mysql-db-config --prefix=DB_
+oc set env deployment/mysql-api --from=secret/mysql-db-credentials --prefix=DB_
+oc expose deployment mysql-api --port=8080 --name=mysql-api-service
+echo "--- Waiting for FastAPI to be ready..."
+oc wait --for=condition=ready pod -l app.kubernetes.io/instance=mysql-api --timeout=300s
+echo "--- FastAPI is ready!"
+
+# -------------------------
+# שלב 5 (אימפרטיבי): חשיפת האפליקציה (Route)
+# -------------------------
+oc expose service mysql-api-service --name=mysql-api-route
+echo "--- Route created."
+
+
+# =============================================================================
+#           >>> המשך התהליך (זהה לשתי השיטות) <<<
+# =============================================================================
+
+# -------------------------
+# שלב 6: אתחול הנתונים ב-DB
+# -------------------------
+
+# --- שלב מקדים: מציאת ה-Pod והסיסמה ---
+MYSQL_POD=$(oc get pod -l app.kubernetes.io/instance=mysql-db -o jsonpath='{.items[0].metadata.name}')
+MYSQL_PASSWORD=$(oc get secret mysql-db-credentials -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}' | base64 --decode)
+echo "Found MySQL Pod: $MYSQL_POD"
+
+# -----------------------------------------------------------------------------------
+# >> שיטה א': הזרמה ישירה מהמחשב המקומי (מומלץ) <<
+# -----------------------------------------------------------------------------------
+echo "Running initialization using Method A (Streaming)..."
+oc exec -i "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/create_data.sql
+oc exec -i "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/insert_data.sql
+echo "Database initialized successfully using Method A!"
+
+# -----------------------------------------------------------------------------------
+# >> שלב איפוס (אופציונלי, להדגמת שיטה ב'): <<
+# -----------------------------------------------------------------------------------
+# שימוש בפקודה החסינה עם bash -c
+oc exec "$MYSQL_POD" -- /bin/bash -c "mysql -u root -p'$MYSQL_PASSWORD' -e 'DROP DATABASE IF EXISTS mydatabase; CREATE DATABASE mydatabase;'"
+echo "Database has been reset. Ready for Method B."
+
+# -----------------------------------------------------------------------------------
+# >> שיטה ב': העתקת קבצים ל-Pod והרצתם מבפנים <<
+# -----------------------------------------------------------------------------------
+echo "Running initialization using Method B (Copy then Execute)..."
+oc cp scripts/create_data.sql "$MYSQL_POD":/tmp/create_data.sql
+oc cp scripts/insert_data.sql "$MYSQL_POD":/tmp/insert_data.sql
+echo "SQL files copied to $MYSQL_POD:/tmp/"
+oc exec "$MYSQL_POD" -- bash -c "mysql -u root -p'$MYSQL_PASSWORD' mydatabase < /tmp/create_data.sql"
+oc exec "$MYSQL_POD" -- bash -c "mysql -u root -p'$MYSQL_PASSWORD' mydatabase < /tmp/insert_data.sql"
+echo "Database initialized successfully using Method B!"
+
+# -------------------------
+# שלב 7: מציאת הכתובת ובדיקה
+# -------------------------
+ROUTE_URL=$(oc get route mysql-api-route -o jsonpath='{.spec.host}')
+echo "======================================================"
+echo "Application URL: https://${ROUTE_URL}"
+echo "Data Endpoint:   https://${ROUTE_URL}/data"
+echo "API Docs:        https://${ROUTE_URL}/docs"
+echo "======================================================"
+
+# -------------------------
+# שלב 8: ניקוי הסביבה (בסוף ההדגמה)
+# -------------------------
+
+# =======================================================================================
+#               >>> פקודות ניקוי <<<
+# =======================================================================================
+
+# ---------------------------------------------------------------------------------------
+#           אפשרות א': מחיקה סלקטיבית באמצעות תוויות (מומלץ)
+# ---------------------------------------------------------------------------------------
+# מכיוון שסימנו את כל הרכיבים שלנו עם התווית 'app.kubernetes.io/part-of=data-loader-app',
+# אנו יכולים למחוק אותם באופן ממוקד ומבלי לפגוע ברכיבים אחרים בפרויקט.
+
+# פקודה זו מוחקת את כל הרכיבים העיקריים (Deployments, Services, Routes, וכו')
+echo "To clean up resources created by this demo, run:"
+echo "oc delete all --selector=app.kubernetes.io/part-of=data-loader-app"
+
+# פקודה זו מוחקת את שאר הרכיבים שהפקודה 'all' לא תופסת
+echo "oc delete pvc,secret,configmap --selector=app.kubernetes.io/part-of=data-loader-app"
+echo "======================================================================================="
+
+
+# ---------------------------------------------------------------------------------------
+#           אפשרות ב': מחיקת הפרויקט כולו (הדרך המהירה והיסודית)
+# ---------------------------------------------------------------------------------------
+# אם הפרויקט נוצר רק עבור ההדגמה, הדרך הפשוטה ביותר לנקות הכל היא למחוק אותו.
+# אזהרה: פעולה זו תמחק את כל מה שנמצא בפרויקט 'my-live-demo'.
+
+echo "Alternatively, to delete the entire project, run:"
+echo "oc delete project my-live-demo"
+echo "======================================================================================="

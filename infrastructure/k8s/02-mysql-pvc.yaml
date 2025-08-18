@@ -3,7 +3,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: mysql-db-pvc
   labels:
-    test: a
+    app.kubernetes.io/name: mysql
+    app.kubernetes.io/instance: mysql-db
+    app.kubernetes.io/part-of: data-loader-app
 spec:
   accessModes:
     - ReadWriteOnce

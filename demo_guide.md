@@ -1,81 +1,263 @@
+# מדריך פריסה חיה: אפליקציית FastAPI ו-MySQL ל-OpenShift
+
+מדריך זה מציג פריסה מלאה של אפליקציה ותשתית ל-OpenShift, שלב אחר שלב.
+הוא מדגים שתי שיטות עיקריות:
+1.  **דקלרטיבית (עם קבצי YAML):** השיטה המומלצת לפרודקשן (Infrastructure as Code).
+2.  **אימפרטיבית (עם פקודות CLI ישירות):** לשימוש מהיר ולפיתוח.
+
+---
+
 ## שלב 0: הכנות
 
-**מה להגיד:** "שלום לכולם. היום נדגים פריסה של אפליקציית Full-Stack פשוטה ב-OpenShift, הכוללת מסד נתונים MySQL ושירות API בפייתון. נראה איך מרימים את כל התשתית מאפס, שלב אחר שלב, ונדגים שתי דרכי עבודה מרכזיות: **הדרך הדקלרטיבית** באמצעות קבצי YAML, ו**הדרך האימפרטיבית** באמצעות פקודות ישירות. לפני שנתחיל, יצרתי פרויקט חדש ונקי בשם `my-live-demo`."
+ודא שהכלים הבאים מותקנים ומוכנים לשימוש:
+*   `oc` (OpenShift CLI)
+*   `docker`
+*   `git`
 
-## שלב 1: בניית Docker Image
+#### 1. התחברות ל-OpenShift
+```bash
+# (בצע לפני ההדגמה)
+oc login --token=<your-token> --server=<your-server-url>
+```
 
-**מה להגיד:** "השלב הראשון והבסיסי הוא לארוז את אפליקציית הפייתון שלנו לתוך Docker Image, שהוא יחידת הפריסה הניידת שלנו. לאחר מכן, נדחוף אותו למאגר מרכזי, Docker Hub, כדי ש-OpenShift יוכל למשוך אותו משם."
+#### 2. יצירת פרויקט חדש
+```bash
+oc new-project my-live-demo
+```
 
-**(הרץ את פקודות `docker build` ו-`docker push`)**
+#### 3. התחברות ל-Docker Hub
+```bash
+# (בצע לפני ההדגמה)
+docker login
+```
 
-## שלב 2: יצירת Secret לסיסמאות
+#### 4. הגדרת משתנים
+**!!! חשוב:** בצע שלב זה בטרמינל שבו תריץ את שאר הפקודות.
 
-**מה להגיד:** "אבטחה היא הדבר הראשון שנדאג לו. במקום לשמור סיסמאות בקוד, ניצור אובייקט `Secret` ב-OpenShift שיחזיק אותן בצורה מאובטחת. הדרך המומלצת היא להגדיר את ה-Secret בקובץ YAML, כי זה מאפשר לנו לנהל את התשתית שלנו כקוד."
+<details>
+<summary>💻 <strong>עבור Linux / macOS</strong></summary>
 
-**(הרץ את פקודת `oc apply` על `01-mysql-secret.yaml`)**
+```bash
+# !!! החלף את 'your-dockerhub-username' בשם המשתמש שלך ב-Docker Hub !!!
+export DOCKERHUB_USERNAME='your-dockerhub-username'
+```
 
-**מה להגיד (אופציונלי):** "אפשר להראות שגם ניתן ליצור את אותו Secret ישירות מה-CLI עם `oc create secret`, אבל זו פחות פרקטיקה מומלצת לפרודקשן."
+</details>
 
-**(הרץ את פקודת `oc get secret` כדי להראות שהוא נוצר)**
+<details>
+<summary>🪟 <strong>עבור Windows (CMD)</strong></summary>
 
-## שלב 3: יצירת אחסון קבוע (PVC)
+```batch
+@REM !!! החלף את 'your-dockerhub-username' בשם המשתמש שלך ב-Docker Hub !!!
+set "DOCKERHUB_USERNAME=your-dockerhub-username"
+```
+</details>
 
-**מה להגיד:** "מסד נתונים חייב לשמור מידע באופן קבוע. ה-PVC, או Persistent Volume Claim, הוא הבקשה שלנו מ-OpenShift ל'דיסק' וירטואלי. הנתונים של מסד הנתונים יישמרו עליו ויישמרו גם אם הקונטיינר יופעל מחדש."
+---
 
-**(הרץ את פקודת `oc apply` על `02-mysql-pvc.yaml`)**
+## שלב 1: בניית והעלאת Docker Image
 
-**(הרץ `oc get pvc` והראה שהסטטוס הוא `Bound`, כלומר הוקצה לו שטח אחסון פיזי)**
+ניצור תג ייחודי ונבנה את האימג' של האפליקציה. לאחר מכן, נעלה אותו ל-Docker Hub.
 
-## שלב 4: פריסת MySQL
+<details>
+<summary>💻 <strong>עבור Linux / macOS</strong></summary>
 
-**מה להגיד:** "עכשיו נרים את מסד הנתונים עצמו. נשתמש בקובץ `Deployment` שמגדיר איך להריץ את קונטיינר ה-MySQL, ומחבר אותו ל-Secret שיצרנו קודם (כדי לקבל סיסמאות) ול-PVC (כדי לשמור נתונים). בנוסף, ניצור `Service` שנותן למסד הנתונים כתובת רשת פנימית קבועה."
+```bash
+# יצירת תג ייחודי להדגמה
+export IMAGE_TAG=manual-demo-$(date +%s)
 
-**(הרץ את פקודות `oc apply` על `03-mysql-deployment.yaml` ו-`04-mysql-service.yaml`)**
+# בנייה והעלאה
+echo "Building and pushing image: ${DOCKERHUB_USERNAME}/data-loader-service:${IMAGE_TAG}"
+docker buildx build --platform linux/amd64,linux/arm64 --no-cache -t ${DOCKERHUB_USERNAME}/data-loader-service:${IMAGE_TAG} --push ..
+```
 
-**מה להגיד:** "הפריסה לוקחת קצת זמן, כי OpenShift צריך למשוך את האימג' ולהפעיל את ה-Pod. נשתמש בפקודת `oc wait` כדי להמתין עד שה-Pod יהיה במצב `Ready` לפני שנמשיך."
+</details>
 
-**(הרץ את פקודת `oc wait`)**
+<details>
+<summary>🪟 <strong>עבור Windows (CMD)</strong></summary>
 
-## שלב 5: פריסת אפליקציית FastAPI
+```batch
+@REM יצירת תג ייחודי להדגמה
+FOR /F "tokens=*" %%g IN ('powershell -Command "Get-Date -UFormat +%%s"') DO SET "IMAGE_TAG=manual-demo-%%g"
 
-**מה להגיד:** "עכשיו, כשמסד הנתונים מוכן, נפרוס את אפליקציית ה-FastAPI שלנו. שוב, נדגים את שתי הדרכים."
+@REM בנייה והעלאה
+echo "Building and pushing image: %DOCKERHUB_USERNAME%/data-loader-service:%IMAGE_TAG%"
+docker buildx build --platform linux/amd64,linux/arm64 --no-cache -t "%DOCKERHUB_USERNAME%/data-loader-service:%IMAGE_TAG%" --push ..
+```
+</details>
 
-**--- שיטה א' (דקלרטיבית - YAML) ---**
+---
 
-**מה להגיד:** "הדרך המומלצת היא להשתמש בקבצי ה-YAML. קובץ ה-Deployment של FastAPI מוגדר לקרוא את פרטי הגישה מה-Secret. נשתמש בפקודת `sed` כדי להכניס את שם המשתמש והתג הנכונים לקובץ בזמן הריצה."
+## שיטה א': הדרך המומלצת (דקלרטיבית עם YAML)
 
-**(הרץ את פקודת ה-`sed` המשולבת עם `oc apply` ואת ה-`oc apply` ל-Service)**
+שיטה זו משתמשת בקבצי תצורה (מניפסטים) כדי להגדיר את המצב הרצוי של המערכת.
 
-**--- שיטה ב' (אימפרטיבית - פקודות ישירות) ---**
+### שלב 2: יצירת תצורה, סודות ואחסון
 
-**מה להגיד:** "לחלופין, אפשר ליצור את הרכיבים בפקודות ישירות. נשתמש ב-`oc create deployment`, ואז נדגים איך להזריק את משתני הסביבה לחיבור ל-DB. כאן נראה את ההבדל בין שימוש ב-Secret לשימוש במשתני סביבה רגילים: נזריק אותם ישירות, בצורה פחות מאובטחת, כדי להדגים את המנגנון. לבסוף, ניצור Service עם `oc expose deployment`."
+כפרקטיקה מומלצת, אנו מפרידים בין תצורה כללית (ב-`ConfigMap`) לבין מידע רגיש (ב-`Secret`). בנוסף, אנו מבקשים נפח אחסון קבוע (PVC) עבור מסד הנתונים.
 
-**(אם מדגים, הסר את ההערות מהפקודות הרלוונטיות בקובץ הפקודות והרץ אותן)**
+```bash
+oc apply -f infrastructure/k8s/00-mysql-configmap.yaml
+oc apply -f infrastructure/k8s/01-mysql-secret.yaml
+oc apply -f infrastructure/k8s/02-mysql-pvc.yaml
+echo "--- ConfigMap, Secret and PVC created."
+oc get configmap,secret,pvc
+```
 
-**--- המשך (לשתי השיטות) ---**
+### שלב 3: פריסת MySQL
 
-**מה להגיד:** "כמו קודם, נמתין שה-API יהיה מוכן עם `oc wait`."
+נפרוס את מסד הנתונים באמצעות `Deployment` ו-`Service`.
 
-**(הרץ את פקודת `oc wait` של ה-API)**
+```bash
+oc apply -f infrastructure/k8s/03-mysql-deployment.yaml
+oc apply -f infrastructure/k8s/04-mysql-service.yaml
+echo "--- Waiting for MySQL pod to become ready..."
+oc wait --for=condition=ready pod -l app.kubernetes.io/instance=mysql-db --timeout=300s
+echo "--- MySQL pod is ready. Allowing time for internal database initialization..."
+sleep 15 # ב-Windows, השתמש ב-timeout /t 15 >nul
+echo "--- MySQL is fully initialized!"
+```
 
-## שלב 6: אתחול הנתונים ב-DB
+### שלב 4: פריסת FastAPI
 
-**מה להגיד:** "כרגע מסד הנתונים שלנו ריק. כדי שיהיה לנו מידע להציג, אנחנו צריכים לאתחל אותו. נעשה זאת בתהליך של שלושה שלבים: נמצא את שם ה-Pod של MySQL, נעתיק אליו את קבצי ה-SQL שלנו עם `oc cp`, ולבסוף נשתמש ב-`oc exec` כדי להריץ את הפקודות בתוך ה-Pod."
+נפרוס את שירות ה-API. הפקודה הבאה משתמשת בכלי מתאים למערכת ההפעלה כדי להחליף את שם המשתמש והתג ב-YAML באופן דינמי.
 
-**(הרץ את הפקודות של שלב 6: `MYSQL_POD=...`, `oc cp...`, `MYSQL_PASSWORD=...`, `oc exec...`)**
+<details>
+<summary>💻 <strong>עבור Linux / macOS (עם sed)</strong></summary>
 
-## שלב 7: חשיפת האפליקציה (Route)
+```bash
+sed -e "s|YOUR_DOCKERHUB_USERNAME|${DOCKERHUB_USERNAME}|g" \
+    -e "s|:latest|:${IMAGE_TAG}|g" \
+    "infrastructure/k8s/05-fastapi-deployment.yaml" | oc apply -f -
+```
 
-**מה להגיד:** "השלב האחרון הוא לחשוף את ה-API שלנו לעולם החיצון כדי שנוכל לגשת אליו מהדפדפן. ב-OpenShift, עושים זאת באמצעות אובייקט `Route`."
+</details>
 
-**(הרץ את פקודת `oc apply` על `07-fastapi-route.yaml`)**
+<details>
+<summary>🪟 <strong>עבור Windows (עם PowerShell)</strong></summary>
 
-**מה להגיד:** "עכשיו שה-Route נוצר, בואו נמצא את הכתובת ונבדוק שהכל עובד."
+```batch
+powershell -Command "(Get-Content -Raw infrastructure\k8s\05-fastapi-deployment.yaml).Replace('YOUR_DOCKERHUB_USERNAME', '%DOCKERHUB_USERNAME%').Replace(':latest', ':%IMAGE_TAG%') | oc apply -f -"
+```
+</details>
 
-**(הרץ את הפקודה האחרונה שמדפיסה את ה-URL. העתק את ה-URL לדפדפן והראה את התוצאה של `/data` ושל `/docs`)**
+```bash
+# המשך פריסת ה-API
+oc apply -f infrastructure/k8s/06-fastapi-service.yaml
+echo "--- Waiting for FastAPI to be ready..."
+oc wait --for=condition=ready pod -l app.kubernetes.io/instance=mysql-api --timeout=300s
+echo "--- FastAPI is ready!"
+```
+
+### שלב 5: חשיפת האפליקציה (Route)
+
+```bash
+oc apply -f infrastructure/k8s/07-fastapi-route.yaml
+echo "--- Route created."
+```
+
+---
+
+## המשך התהליך (זהה לשתי השיטות)
+
+### שלב 6: אתחול הנתונים ב-DB
+
+#### א. מציאת ה-Pod והסיסמה
+
+<details>
+<summary>💻 <strong>עבור Linux / macOS</strong></summary>
+
+```bash
+MYSQL_POD=$(oc get pod -l app.kubernetes.io/instance=mysql-db -o jsonpath='{.items[0].metadata.name}')
+MYSQL_PASSWORD=$(oc get secret mysql-db-credentials -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}' | base64 --decode)
+echo "Found MySQL Pod: $MYSQL_POD"
+```
+
+</details>
+
+<details>
+<summary>🪟 <strong>עבור Windows (CMD)</strong></summary>
+
+```batch
+FOR /F "tokens=*" %%g IN ('oc get pod -l app.kubernetes.io/instance=mysql-db -o jsonpath="{.items[0].metadata.name}"') DO SET "MYSQL_POD=%%g"
+FOR /F "tokens=*" %%g IN ('oc get secret mysql-db-credentials -o jsonpath="{.data.MYSQL_ROOT_PASSWORD}"') DO SET "B64_PASSWORD=%%g"
+FOR /F "usebackq tokens=*" %%h IN (`powershell -NoProfile -Command "[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('%B64_PASSWORD%'))"`) DO SET "MYSQL_PASSWORD=%%h"
+echo Found MySQL Pod: %MYSQL_POD%
+```
+</details>
+
+#### ב. אתחול הנתונים (שיטה א': הזרמה ישירה)
+
+<details>
+<summary>💻 <strong>עבור Linux / macOS</strong></summary>
+
+```bash
+echo "Running initialization using Method A (Streaming)..."
+oc exec -i "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/create_data.sql
+oc exec -i "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/insert_data.sql
+echo "Database initialized successfully using Method A!"
+```
+</details>
+
+<details>
+<summary>🪟 <strong>עבור Windows (CMD)</strong></summary>
+
+```batch
+echo Running initialization using Method A (Streaming)...
+oc exec -i "%MYSQL_POD%" -- mysql -u root -p"%MYSQL_PASSWORD%" mydatabase < scripts\create_data.sql
+oc exec -i "%MYSQL_POD%" -- mysql -u root -p"%MYSQL_PASSWORD%" mydatabase < scripts\insert_data.sql
+echo Database initialized successfully using Method A!
+```
+</details>
+
+---
+
+### שלב 7: מציאת הכתובת ובדיקה
+
+<details>
+<summary>💻 <strong>עבור Linux / macOS</strong></summary>
+
+```bash
+ROUTE_URL=$(oc get route mysql-api-route -o jsonpath='{.spec.host}')
+echo "======================================================"
+echo "Application URL: https://${ROUTE_URL}"
+echo "Data Endpoint:   https://${ROUTE_URL}/data"
+echo "API Docs:        https://${ROUTE_URL}/docs"
+echo "======================================================"
+```
+</details>
+
+<details>
+<summary>🪟 <strong>עבור Windows (CMD)</strong></summary>
+
+```batch
+FOR /F "tokens=*" %%g IN ('oc get route mysql-api-route -o jsonpath="{.spec.host}"') DO SET "ROUTE_URL=%%g"
+echo ======================================================
+echo Application URL: https://%ROUTE_URL%
+echo Data Endpoint:   https://%ROUTE_URL%/data
+echo API Docs:        https://%ROUTE_URL%/docs
+echo ======================================================
+```
+</details>
+
+---
 
 ## שלב 8: ניקוי הסביבה
 
-**מה להגיד:** "לסיום, כדי לשמור על סביבה נקייה, נמחק את כל המשאבים שיצרנו. מכיוון שהגדרנו את כולם עם תוויות (`labels`), אפשר למחוק אותם בקלות."
+### אפשרות א': מחיקה סלקטיבית באמצעות תוויות (מומלץ)
+מכיוון שסימנו את כל הרכיבים שלנו עם התווית `app.kubernetes.io/part-of=data-loader-app`, אנו יכולים למחוק אותם באופן ממוקד.
 
-**(הרץ את פקודות הניקוי)**
+```bash
+# פקודה זו מוחקת את כל הרכיבים העיקריים (Deployments, Services, Routes, וכו')
+oc delete all --selector=app.kubernetes.io/part-of=data-loader-app
+
+# פקודה זו מוחקת את שאר הרכיבים שהפקודה 'all' לא תופסת
+oc delete pvc,secret,configmap --selector=app.kubernetes.io/part-of=data-loader-app
+```
+
+### אפשרות ב': מחיקת הפרויקט כולו
+**אזהרה:** פעולה זו תמחק את כל מה שנמצא בפרויקט `my-live-demo`.
+
+```bash
+oc delete project my-live-demo
+```

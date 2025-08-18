@@ -3,22 +3,24 @@ kind: Deployment
 metadata:
   name: mysql-api-deployment
   labels:
-    app: mysql-api
-    test: a
+    app.kubernetes.io/name: fastapi-api
+    app.kubernetes.io/instance: mysql-api
+    app.kubernetes.io/part-of: data-loader-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mysql-api
+      app.kubernetes.io/instance: mysql-api
   template:
     metadata:
       labels:
-        app: mysql-api
+        app.kubernetes.io/name: fastapi-api
+        app.kubernetes.io/instance: mysql-api
+        app.kubernetes.io/part-of: data-loader-app
     spec:
       containers:
         - name: fastapi-container
           image: "docker.io/YOUR_DOCKERHUB_USERNAME/data-loader-service:latest"
-          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
@@ -26,16 +28,23 @@ spec:
               value: "mysql-db-service"
             - name: DB_NAME
               valueFrom:
-                secretKeyRef:
-                  name: mysql-db-credentials
+                configMapKeyRef:
+                  name: mysql-db-config
                   key: MYSQL_DATABASE
             - name: DB_USER
               valueFrom:
-                secretKeyRef:
-                  name: mysql-db-credentials
+                configMapKeyRef:
+                  name: mysql-db-config
                   key: MYSQL_USER
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mysql-db-credentials
                   key: MYSQL_PASSWORD
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"

@@ -3,17 +3,20 @@ kind: Deployment
 metadata:
   name: mysql-db-deployment
   labels:
-    app: mysql-db
-    test: a
+    app.kubernetes.io/name: mysql
+    app.kubernetes.io/instance: mysql-db
+    app.kubernetes.io/part-of: data-loader-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mysql-db
+      app.kubernetes.io/instance: mysql-db
   template:
     metadata:
       labels:
-        app: mysql-db
+        app.kubernetes.io/name: mysql
+        app.kubernetes.io/instance: mysql-db
+        app.kubernetes.io/part-of: data-loader-app
     spec:
       containers:
         - name: mysql
@@ -21,8 +24,17 @@ spec:
           ports:
             - containerPort: 3306
           envFrom:
+            - configMapRef:
+                name: mysql-db-config
             - secretRef:
                 name: mysql-db-credentials
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           volumeMounts:
             - name: mysql-persistent-storage
               mountPath: /var/lib/mysql

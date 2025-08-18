@@ -3,11 +3,12 @@ kind: Service
 metadata:
   name: mysql-api-service
   labels:
-    app: mysql-api
-    test: a
+    app.kubernetes.io/name: fastapi-api
+    app.kubernetes.io/instance: mysql-api
+    app.kubernetes.io/part-of: data-loader-app
 spec:
   selector:
-    app: mysql-api
+    app.kubernetes.io/instance: mysql-api
   ports:
     - protocol: TCP
       port: 8080

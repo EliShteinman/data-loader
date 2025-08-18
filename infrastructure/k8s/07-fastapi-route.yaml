@@ -3,8 +3,9 @@ kind: Route
 metadata:
   name: mysql-api-route
   labels:
-    app: mysql-api
-    test: a
+    app.kubernetes.io/name: fastapi-api
+    app.kubernetes.io/instance: mysql-api
+    app.kubernetes.io/part-of: data-loader-app
 spec:
   to:
     kind: Service

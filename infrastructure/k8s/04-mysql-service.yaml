@@ -3,11 +3,12 @@ kind: Service
 metadata:
   name: mysql-db-service
   labels:
-    app: mysql-db
-    test: a
+    app.kubernetes.io/name: mysql
+    app.kubernetes.io/instance: mysql-db
+    app.kubernetes.io/part-of: data-loader-app
 spec:
   selector:
-    app: mysql-db
+    app.kubernetes.io/instance: mysql-db
   ports:
     - protocol: TCP
       port: 3306
