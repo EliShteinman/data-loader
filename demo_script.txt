@@ -24,7 +24,7 @@ docker login
 # -------------------------
 
 # החלף את <your-dockerhub-username> בשם המשתמש שלך
-docker build -t <your-dockerhub-username>/data-loader-service:manual-demo .
+docker build --no-cache --platform linux/amd64 -t <your-dockerhub-username>/data-loader-service:manual-demo .
 docker push <your-dockerhub-username>/data-loader-service:manual-demo
 
 
@@ -47,7 +47,7 @@ oc apply -f infrastructure/k8s/03-mysql-deployment.yaml
 oc apply -f infrastructure/k8s/04-mysql-service.yaml
 echo "--- Waiting for MySQL to be ready..."
 oc wait --for=condition=ready pod -l app=mysql-db --timeout=300s
-echo "--- MySQL is ready!"
+echo "--- MySQL is ready! "
 
 # -------------------------
 # שלב 4 (YAML): פריסת FastAPI
@@ -59,7 +59,7 @@ sed -e "s|YOUR_DOCKERHUB_USERNAME|<your-dockerhub-username>|g" \
 oc apply -f infrastructure/k8s/06-fastapi-service.yaml
 echo "--- Waiting for FastAPI to be ready..."
 oc wait --for=condition=ready pod -l app=mysql-api --timeout=300s
-echo "--- FastAPI is ready!"
+echo "--- FastAPI is ready! "
 
 # -------------------------
 # שלב 5 (YAML): חשיפת האפליקציה (Route)
@@ -133,9 +133,9 @@ oc cp scripts/insert_data.sql "$MYSQL_POD":/tmp/insert_data.sql
 MYSQL_PASSWORD=$(oc get secret mysql-db-credentials -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}' | base64 --decode)
 
 # הרצת הסקריפטים בתוך ה-Pod
-oc exec "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/create_data.sql
-oc exec "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/insert_data.sql
-echo "Database initialized successfully!"
+oc exec -i "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/create_data.sql
+oc exec -i "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/insert_data.sql
+echo "Database initialized successfully! "
 
 
 # -------------------------
