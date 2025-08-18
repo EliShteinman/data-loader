@@ -20,7 +20,7 @@ set -e # עצירה אוטומטית במקרה של שגיאה
 # --- NEW: Step 1.5: Build and Push Docker Image ---
 echo "[INFO] Building and pushing image: ${FULL_IMAGE_NAME}"
 # הרצת הבנייה מתיקיית השורש של הפרויקט (..), שם נמצא ה-Dockerfile
-(cd .. && docker buildx build --no-cache --platform linux/amd64 -t "${FULL_IMAGE_NAME}" --push .)
+(cd .. && docker buildx build --no-cache --platform linux/amd64,linux/arm64 -t "${FULL_IMAGE_NAME}" --push .)
 echo "[SUCCESS] Image pushed successfully to Docker Hub."
 echo ""
 
