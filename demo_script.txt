@@ -90,7 +90,7 @@ oc set env deployment/mysql-db --from=secret/mysql-db-credentials
 oc label deployment mysql-db app=mysql-db
 echo "--- Waiting for MySQL to be ready..."
 oc wait --for=condition=ready pod -l app=mysql-db --timeout=300s
-echo "--- MySQL is ready!"
+echo "--- MySQL is ready! "
 
 # -------------------------
 # שלב 4 (אימפרטיבי): פריסת FastAPI
@@ -106,7 +106,7 @@ oc set env deployment/mysql-api --keys=MYSQL_USER --from=secret/mysql-db-credent
 oc set env deployment/mysql-api --keys=MYSQL_PASSWORD --from=secret/mysql-db-credentials --prefix=DB_
 echo "--- Waiting for FastAPI to be ready..."
 oc wait --for=condition=ready pod -l app=mysql-api --timeout=300s
-echo "--- FastAPI is ready!"
+echo "--- FastAPI is ready! "
 
 # -------------------------
 # שלב 5 (אימפרטיבי): חשיפת האפליקציה (Route)
@@ -143,7 +143,7 @@ echo "---------------------------------------------------------"
 echo "Running initialization using Method A (Streaming)..."
 oc exec -i "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/create_data.sql
 oc exec -i "$MYSQL_POD" -- mysql -u root -p"$MYSQL_PASSWORD" mydatabase < scripts/insert_data.sql
-echo "Database initialized successfully using Method A!"
+echo "Database initialized successfully using Method A! "
 echo "======================================================"
 
 
@@ -176,7 +176,7 @@ echo "SQL files copied to $MYSQL_POD:/tmp/"
 # שלב 2: הרצה
 oc exec "$MYSQL_POD" -- bash -c "mysql -u root -p'$MYSQL_PASSWORD' mydatabase < /tmp/create_data.sql"
 oc exec "$MYSQL_POD" -- bash -c "mysql -u root -p'$MYSQL_PASSWORD' mydatabase < /tmp/insert_data.sql"
-echo "Database initialized successfully using Method B!"
+echo "Database initialized successfully using Method B! "
 echo "======================================================"
 
 

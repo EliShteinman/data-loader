@@ -4,4 +4,6 @@ INSERT INTO data (first_name, last_name) VALUES
 ('Jane', 'Smith'),
 ('Peter', 'Jones'),
 ('Emily', 'Williams'),
-('Michael', 'Brown');
+('Michael', 'Brown'),
+('harry', 'potter')
+;
