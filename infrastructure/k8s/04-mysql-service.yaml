@@ -4,6 +4,7 @@ metadata:
   name: mysql-db-service
   labels:
     app: mysql-db
+    test: a
 spec:
   selector:
     app: mysql-db

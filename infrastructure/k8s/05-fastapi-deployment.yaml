@@ -4,6 +4,7 @@ metadata:
   name: mysql-api-deployment
   labels:
     app: mysql-api
+    test: a
 spec:
   replicas: 1
   selector:

@@ -4,6 +4,7 @@ metadata:
   name: mysql-api-route
   labels:
     app: mysql-api
+    test: a
 spec:
   to:
     kind: Service
