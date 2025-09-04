@@ -1,37 +1,66 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional
 
 
-class ItemBase(BaseModel):
+class SoldierBase(BaseModel):
     """
-    Base model containing common fields for an item.
-    This helps to avoid code duplication (DRY principle).
+    Base model containing common fields for a soldier record.
+    Based on the exam requirements for enemy soldiers database.
     """
+    first_name: str = Field(..., description="Soldier's first name")
+    last_name: str = Field(..., description="Soldier's last name")
+    phone_number: int = Field(..., description="Soldier's phone number")
+    rank: str = Field(..., description="Soldier's military rank")
 
-    first_name: str
-    last_name: str
 
-
-class ItemCreate(ItemBase):
+class SoldierCreate(SoldierBase):
     """
-    Model for creating an item (data sent in POST/PUT requests).
-    It inherits all fields from ItemBase. The 'pass' statement
-    indicates that no additional fields are needed for creation.
+    Model for creating a soldier (data sent in POST/PUT requests).
+    Includes the unique ID field required by the exam.
     """
+    ID: int = Field(..., description="Unique soldier identifier")
 
-    pass
 
-
-class Item(ItemBase):
+class SoldierUpdate(BaseModel):
     """
-    Model representing an item as it is stored and returned from the database.
-    It includes the database-generated ID.
+    Model for updating soldier information with partial updates.
+    All fields are optional to allow partial updates.
     """
+    first_name: Optional[str] = Field(None, description="Updated first name")
+    last_name: Optional[str] = Field(None, description="Updated last name")
+    phone_number: Optional[int] = Field(None, description="Updated phone number")
+    rank: Optional[str] = Field(None, description="Updated military rank")
 
-    ID: int
+
+class Soldier(SoldierBase):
+    """
+    Model representing a soldier as stored and returned from database.
+    Includes the database-generated/provided ID.
+    """
+    ID: int = Field(..., description="Unique soldier identifier")
 
     class Config:
         """
         Pydantic model configuration.
         """
+        from_attributes = True
 
-        from_attributes = True  # Allows Pydantic to create the model from object attributes (e.g., from an ORM object)
+
+# Legacy models for backward compatibility with existing data
+class ItemBase(BaseModel):
+    """Legacy model - keeping for backward compatibility"""
+    first_name: str
+    last_name: str
+
+
+class ItemCreate(ItemBase):
+    """Legacy model - keeping for backward compatibility"""
+    pass
+
+
+class Item(ItemBase):
+    """Legacy model - keeping for backward compatibility"""
+    ID: int
+
+    class Config:
+        from_attributes = True

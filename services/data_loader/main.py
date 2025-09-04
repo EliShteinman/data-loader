@@ -4,7 +4,7 @@ from typing import List
 
 # Import the shared components: the data access layer, API routers, and models
 from .core.dependencies import data_loader
-from .crud import items
+from .crud import items, soldiers
 from . import models
 
 
@@ -36,6 +36,7 @@ app = FastAPI(
 # Mount the CRUD API router into the main application.
 # All endpoints from `items.py` will be included under the `/items` prefix.
 app.include_router(items.router)
+app.include_router(soldiers.router)
 
 # --- Define Core/Legacy Endpoints ---
 # These endpoints are defined directly on the main 'app' object.
